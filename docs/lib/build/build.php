@@ -15,7 +15,12 @@ require __DIR__ . '/../../src/bootstrap.php';
 
 list(, $file) = $argv + array(null, 'build/pipelines.phar');
 
-$version = exec('git describe --tags --always --first-parent --dirty=+');
+$version = exec('git describe --tags --always --first-parent --dirty=+', $output, $status);
+unset($output);
+if (0 !== $status) {
+    fprintf(STDERR, "fatal: version by git non-zero exit status: %d\n", $status);
+    exit(1);
+}
 
 printf("building %s ...\n", $version);
 
@@ -27,7 +32,7 @@ $builder
     ->add('src/**/*.php') # utility php files
     ->add('src/Utility/App.php', $builder->replace('@.@.@', $version)) # set version
     ->add('lib/package/*.yml') # docker client packages
-    ->remove('lib/package/docker-42.42.1-binsh-test-stub.yml') # test fixture
+    ->remove('lib/package/docker-42.42.1-binsh-test-stub.yml', false) # test fixture
     // FIXME ;!pattern
     ->remove('src/Cli/Vcs**') # vcs integration stub (unused)
     ->remove('src/PharBuild/*') # phar build
